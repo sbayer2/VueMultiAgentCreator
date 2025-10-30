@@ -4,11 +4,12 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Quick Reference
 
-**Current Deployment** (Updated 2025-08-21):
+**Current Deployment** (Updated 2025-10-30):
 - Frontend: https://vue-multiagent-frontend-129438231958.us-central1.run.app
 - Backend: https://vue-multiagent-backend-129438231958.us-central1.run.app
 - Project: mythic-aloe-467602-t4
-- Database: vue_app on Cloud SQL (MySQL 8.0)
+- Database: vue_app on Cloud SQL (MySQL 8.0) - **Secured with Cloud SQL Auth Proxy** 🔒
+- Connection: Unix socket via `/cloudsql/mythic-aloe-467602-t4:us-central1:vue-multiagent-db`
 
 ## Documentation Structure
 
@@ -64,11 +65,16 @@ docker-compose up --build
 
 ## Environment Variables (Backend)
 
-Required for deployment:
+Required for production deployment:
 - `OPENAI_API_KEY`: OpenAI API access
 - `SECRET_KEY`: JWT token signing
-- `DB_PASS`, `DB_HOST`, `DB_USER`, `DB_NAME`: Database connection
+- `DB_PASS`: Database password
+- `INSTANCE_CONNECTION_NAME`: Cloud SQL instance connection (e.g., `mythic-aloe-467602-t4:us-central1:vue-multiagent-db`)
+- `DB_USER`, `DB_NAME`: Database connection details
 - `FRONTEND_URL`: CORS configuration
+
+Required for local development:
+- Same as above, but use `DB_HOST` instead of `INSTANCE_CONNECTION_NAME` for TCP connection
 
 ## Current Active Development
 
@@ -78,6 +84,7 @@ Required for deployment:
 - Chat interface with WebSocket real-time messaging
 - File upload with vision/assistant file separation
 - Forgot password with email delivery
+- **Cloud SQL Auth Proxy security** - Database secured with Unix socket connections (2025-10-30)
 
 ### Active Focus Areas
 - Cost monitoring dashboard for OpenAI built-in tools

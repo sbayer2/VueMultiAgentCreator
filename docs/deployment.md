@@ -1,27 +1,56 @@
 # Deployment Guide
 
-## Current Deployment (UPDATED 2025-08-21)
+## Current Deployment (UPDATED 2025-10-30)
 
 - **Project**: mythic-aloe-467602-t4
 - **Frontend URL**: https://vue-multiagent-frontend-129438231958.us-central1.run.app
 - **Backend URL**: https://vue-multiagent-backend-129438231958.us-central1.run.app
-- **Cloud SQL Instance**: vue-multiagent-db (MySQL 8.0)
+- **Cloud SQL Instance**: vue-multiagent-db (MySQL 8.0) - **Secured with Cloud SQL Auth Proxy** 🔒
 - **Database**: vue_app
 - **DB User**: root
+- **Connection Method**: Unix socket via Cloud SQL Auth Proxy (production) / TCP (local development)
 
 ## Key Configuration Files
-- `cloudbuild.yaml`: Defines Cloud Build steps for deployment
+- `cloudbuild.yaml`: Defines Cloud Build steps for deployment, includes Cloud SQL instance connection
 - `frontend/.env.production`: Production environment variables
 - `frontend/nginx.conf`: Nginx configuration for frontend
 - `backend/utils/config.py`: Backend configuration with environment variables
+- `backend/models/database.py`: Database connection logic with Unix socket support
+
+## Database Security (Implemented 2025-10-30)
+
+### Cloud SQL Auth Proxy Configuration
+- **Connection Type**: Unix socket for production, TCP for local development
+- **Instance Connection Name**: `mythic-aloe-467602-t4:us-central1:vue-multiagent-db`
+- **Public IP Authorization**: Cleared (no authorized networks)
+- **Security Benefits**:
+  - No public internet exposure
+  - Encrypted IAM-authenticated connections
+  - Protection against brute force attacks
+  - Zero IP whitelisting configuration needed
+
+### How It Works
+1. Cloud Run service configured with `--add-cloudsql-instances` flag
+2. Backend detects `INSTANCE_CONNECTION_NAME` environment variable
+3. Connects via Unix socket at `/cloudsql/mythic-aloe-467602-t4:us-central1:vue-multiagent-db`
+4. For local development, falls back to TCP connection using `DB_HOST`
 
 ## Environment Variables
 
-Backend requires:
+Backend requires (Production):
 - OPENAI_API_KEY
 - SECRET_KEY (for JWT)
 - DB_PASS
-- DB_HOST, DB_USER, DB_NAME
+- INSTANCE_CONNECTION_NAME (for Cloud SQL Auth Proxy)
+- DB_USER, DB_NAME
+- FRONTEND_URL
+
+Backend requires (Local Development):
+- OPENAI_API_KEY
+- SECRET_KEY (for JWT)
+- DB_PASS
+- DB_HOST (TCP connection)
+- DB_USER, DB_NAME
 - FRONTEND_URL
 
 ## Deployment Commands

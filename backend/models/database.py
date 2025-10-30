@@ -117,13 +117,20 @@ class ConversationMessage(Base):
 
 def get_database_url():
     """Get database URL based on environment"""
-    # Always use TCP connection with provided host
     import logging
     logger = logging.getLogger(__name__)
-    db_url = f"mysql+pymysql://{settings.DB_USER}:{'*' * len(settings.DB_PASS) if settings.DB_PASS else 'NO_PASS'}@{settings.DB_HOST}:3306/{settings.DB_NAME}"
-    logger.info(f"Database URL (masked): {db_url}")
+
+    # Use Unix socket if INSTANCE_CONNECTION_NAME is set (Cloud Run with Cloud SQL Auth Proxy)
+    if settings.INSTANCE_CONNECTION_NAME:
+        socket_path = f"/cloudsql/{settings.INSTANCE_CONNECTION_NAME}"
+        db_url_masked = f"mysql+pymysql://{settings.DB_USER}:{'*' * len(settings.DB_PASS)}@/{settings.DB_NAME}?unix_socket={socket_path}"
+        logger.info(f"Database URL (masked, Unix socket): {db_url_masked}")
+        return f"mysql+pymysql://{settings.DB_USER}:{settings.DB_PASS}@/{settings.DB_NAME}?unix_socket={socket_path}&charset=utf8mb4"
+
+    # Otherwise use TCP connection (local development or legacy deployment)
+    db_url_masked = f"mysql+pymysql://{settings.DB_USER}:{'*' * len(settings.DB_PASS) if settings.DB_PASS else 'NO_PASS'}@{settings.DB_HOST}:3306/{settings.DB_NAME}"
+    logger.info(f"Database URL (masked, TCP): {db_url_masked}")
     logger.info(f"DB_PASS length: {len(settings.DB_PASS) if settings.DB_PASS else 0}")
-    # Add charset for better compatibility
     return f"mysql+pymysql://{settings.DB_USER}:{settings.DB_PASS}@{settings.DB_HOST}:3306/{settings.DB_NAME}?charset=utf8mb4"
 
 # Create engine with connection pool settings for Cloud Run
